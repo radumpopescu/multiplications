@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, BarChart2, Delete, RotateCcw } from 'lucide-react';
+import { ArrowLeft, BarChart2, Delete, RotateCcw, Settings } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -24,7 +24,7 @@ export default function Quiz() {
         setUser(JSON.parse(storedUser));
         generateQuestion();
     }, []);
-
+    
     const generateQuestion = () => {
         const a = Math.floor(Math.random() * 11);
         const b = Math.floor(Math.random() * 11);
@@ -33,18 +33,18 @@ export default function Quiz() {
         setStartTime(Date.now());
         setFeedback(null);
     };
-
+    
     const handleInput = (num) => {
         if (feedback) return; // Block input during feedback animation
         if (input.length >= 3) return; // Limit length
         setInput(prev => prev + num);
     };
-
+    
     const handleDelete = () => {
         if (feedback) return;
         setInput(prev => prev.slice(0, -1));
     };
-
+    
     const checkAnswer = async () => {
         if (!input) return;
         
@@ -52,10 +52,10 @@ export default function Quiz() {
         const correctAnswer = question.a * question.b;
         const isCorrect = answer === correctAnswer;
         const timeTaken = Date.now() - startTime;
-
+        
         // Visual feedback
         setFeedback(isCorrect ? 'correct' : 'wrong');
-
+        
         // Save result
         try {
             await axios.post(`${API_URL}/results`, {
@@ -68,36 +68,54 @@ export default function Quiz() {
         } catch (error) {
             console.error("Error saving result", error);
         }
-
+        
         if (isCorrect) {
             const newStreak = streak + 1;
             setStreak(newStreak);
-            if (newStreak > 0 && newStreak % 10 === 0) {
-                triggerConfetti();
-            }
+            
+            // Trigger confetti on every correct answer
+            const isMilestone = newStreak % 10 === 0;
+            triggerConfetti(isMilestone);
+            
             setTimeout(generateQuestion, 1000);
         } else {
             setStreak(0);
             setTimeout(() => {
                 setFeedback(null);
                 setInput('');
-                setStartTime(Date.now()); // Reset timer for retry? Or keep counting? 
-                // Requirement said "time how long it takes to resolve it". 
-                // Usually if wrong, we might want to let them try again or move on.
-                // Let's clear and let them try again, but maybe log the failure.
-                // The backend logs the attempt.
+                setStartTime(Date.now()); // Reset timer for retry
             }, 1000);
         }
     };
-
-    const triggerConfetti = () => {
-        confetti({
-            particleCount: 100,
-            spread: 70,
+    
+    const triggerConfetti = (isMilestone = false) => {
+        const options = {
+            particleCount: isMilestone ? 200 : 50,
+            spread: isMilestone ? 90 : 70,
             origin: { y: 0.6 }
-        });
+        };
+        if (isMilestone) {
+            // Bigger burst for milestones
+            confetti(options);
+            setTimeout(() => {
+                confetti({
+                    ...options,
+                    particleCount: 100,
+                    angle: 60,
+                    spread: 55
+                });
+                confetti({
+                    ...options,
+                    particleCount: 100,
+                    angle: 120,
+                    spread: 55
+                });
+            }, 250);
+        } else {
+            confetti(options);
+        }
     };
-
+    
     return (
         <div className={`min-h-screen flex flex-col transition-colors duration-500 ${
             feedback === 'correct' ? 'bg-green-100' : 
@@ -111,11 +129,16 @@ export default function Quiz() {
                 <div className="font-bold text-gray-600 text-lg">
                     Streak: <span className="text-orange-500">{streak}</span> 🔥
                 </div>
-                <button onClick={() => navigate('/stats')} className="p-2 rounded-full hover:bg-black/10">
-                    <BarChart2 className="w-6 h-6 text-gray-600" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button onClick={() => navigate('/stats')} className="p-2 rounded-full hover:bg-black/10">
+                        <BarChart2 className="w-6 h-6 text-gray-600" />
+                    </button>
+                    <button onClick={() => navigate('/edit-profile')} className="p-2 rounded-full hover:bg-black/10">
+                        <Settings className="w-6 h-6 text-gray-600" />
+                    </button>
+                </div>
             </div>
-
+            
             {/* Question Area */}
             <div className="flex-1 flex flex-col items-center justify-center mb-8">
                 <div className="text-8xl font-bold text-gray-800 mb-8 flex items-center gap-4">
@@ -139,7 +162,7 @@ export default function Quiz() {
                     <p className="mt-4 text-green-500 font-bold text-xl animate-bounce">Great Job!</p>
                 )}
             </div>
-
+            
             {/* Numpad */}
             <div className="bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] p-6 pb-10">
                 <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">

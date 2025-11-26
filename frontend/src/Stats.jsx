@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Settings } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -92,9 +92,14 @@ export default function Stats() {
                     <span className="font-bold">Back to Quiz</span>
                 </button>
                 <h1 className="text-xl font-bold text-blue-800">{user?.name}'s Progress</h1>
-                <button onClick={fetchStats} className="p-2 rounded-full hover:bg-blue-200 text-blue-600">
-                    <RefreshCw className="w-6 h-6" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button onClick={fetchStats} className="p-2 rounded-full hover:bg-blue-200 text-blue-600">
+                        <RefreshCw className="w-6 h-6" />
+                    </button>
+                    <button onClick={() => navigate('/edit-profile')} className="p-2 rounded-full hover:bg-blue-200 text-blue-600">
+                        <Settings className="w-6 h-6" />
+                    </button>
+                </div>
             </div>
 
             <div className="flex-1 overflow-auto p-4 flex justify-center">
@@ -117,14 +122,15 @@ export default function Stats() {
                                 const colorClass = getCellColor(data);
                                 
                                 return (
-                                    <div 
+                                    <div
                                         key={`${row}-${col}`}
-                                        className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] sm:text-xs font-medium transition-transform hover:scale-110 cursor-default ${colorClass}`}
+                                        className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[9px] sm:text-[10px] font-medium transition-transform hover:scale-110 cursor-default ${colorClass}`}
                                         title={data ? `Avg: ${(data.avgTime/1000).toFixed(1)}s\nAcc: ${(data.accuracy*100).toFixed(0)}%` : 'No data'}
                                     >
                                         {data && (
                                             <>
                                                 <span>{(data.accuracy * 100).toFixed(0)}%</span>
+                                                <span className="text-[8px] sm:text-[9px] opacity-75">{(data.avgTime/1000).toFixed(1)}s</span>
                                             </>
                                         )}
                                     </div>

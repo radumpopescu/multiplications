@@ -46,6 +46,43 @@ app.post('/users', (req, res) => {
     }
 });
 
+app.put('/users/:id', (req, res) => {
+    const { id } = req.params;
+    const { name, icon } = req.body;
+
+    if (!name) {
+        res.status(400).json({"error": "Name is required"});
+        return;
+    }
+
+    let sql;
+    let params;
+    if (icon !== undefined) {
+        sql = 'UPDATE users SET name = ?, icon = ? WHERE id = ?';
+        params = [name, icon, id];
+    } else {
+        sql = 'UPDATE users SET name = ? WHERE id = ?';
+        params = [name, id];
+    }
+
+    try {
+        const result = db.prepare(sql).run(params);
+        if (result.changes === 0) {
+            res.status(404).json({"error": "User not found"});
+            return;
+        }
+
+        const updatedUser = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+
+        res.json({
+            "message": "success",
+            "data": updatedUser
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
 // Results API
 app.post('/results', (req, res) => {
     const { user_id, factor_a, factor_b, user_answer, time_taken_ms } = req.body;
