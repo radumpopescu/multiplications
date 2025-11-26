@@ -7,7 +7,10 @@
     "backend"
   ],
   "scripts": {
-    "dev": "npm run dev -w frontend > frontend.log & npm run dev -w backend > backend.log &",
+    "dev": "concurrently \"npm run dev -w frontend > frontend.log\" \"npm run dev -w backend > backend.log\"",
     "build": "npm run build -w frontend && npm run build -w backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

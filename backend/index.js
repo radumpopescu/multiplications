@@ -150,8 +150,8 @@ app.get('/api/stats/:user_id', (req, res) => {
 });
 
 // All other GET requests not handled before will return our React app
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
 });
 
 app.listen(PORT, () => {
