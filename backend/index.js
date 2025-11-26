@@ -11,16 +11,15 @@ app.use(bodyParser.json());
 
 // Users API
 app.get('/users', (req, res) => {
-    db.all("SELECT * FROM users", [], (err, rows) => {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
+    try {
+        const rows = db.prepare("SELECT * FROM users").all();
         res.json({
             "message": "success",
             "data": rows
         });
-    });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
 });
 
 app.post('/users', (req, res) => {
@@ -32,26 +31,25 @@ app.post('/users', (req, res) => {
     const finalIcon = icon || 'smile'; // default icon
     const sql = 'INSERT INTO users (name, icon) VALUES (?,?)';
     const params = [name, finalIcon];
-    db.run(sql, params, function (err, result) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
+    try {
+        const result = db.prepare(sql).run(params);
         res.json({
             "message": "success",
             "data": {
-                "id": this.lastID,
+                "id": result.lastInsertRowid,
                 "name": name,
                 "icon": finalIcon
             }
         });
-    });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
 });
 
 // Results API
 app.post('/results', (req, res) => {
     const { user_id, factor_a, factor_b, user_answer, time_taken_ms } = req.body;
-    
+
     if (user_id == null || factor_a == null || factor_b == null || user_answer == null || time_taken_ms == null) {
         res.status(400).json({"error": "Missing required fields"});
         return;
@@ -60,58 +58,54 @@ app.post('/results', (req, res) => {
     const correct_answer = factor_a * factor_b;
     const is_correct = (parseInt(user_answer) === correct_answer) ? 1 : 0;
 
-    const sql = `INSERT INTO results (user_id, factor_a, factor_b, user_answer, correct_answer, is_correct, time_taken_ms) 
+    const sql = `INSERT INTO results (user_id, factor_a, factor_b, user_answer, correct_answer, is_correct, time_taken_ms)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const params = [user_id, factor_a, factor_b, user_answer, correct_answer, is_correct, time_taken_ms];
 
-    db.run(sql, params, function (err, result) {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
+    try {
+        const result = db.prepare(sql).run(params);
         res.json({
             "message": "success",
             "data": {
-                "id": this.lastID,
+                "id": result.lastInsertRowid,
                 "is_correct": !!is_correct
             }
         });
-    });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
 });
 
 // Stats API
 app.get('/stats/:user_id', (req, res) => {
     const { user_id } = req.params;
-    
+
     // We want aggregated stats for each combination 0-10 x 0-10
-    // But since order doesn't matter for multiplication (2x3 is same as 3x2), 
+    // But since order doesn't matter for multiplication (2x3 is same as 3x2),
     // we might want to group them or just return raw data and let frontend handle.
     // However, for the grid view, usually 2x3 and 3x2 are distinct cells.
-    
+
     const sql = `
-        SELECT 
-            factor_a, 
-            factor_b, 
-            COUNT(*) as attempts, 
-            SUM(is_correct) as correct_count, 
+        SELECT
+            factor_a,
+            factor_b,
+            COUNT(*) as attempts,
+            SUM(is_correct) as correct_count,
             AVG(time_taken_ms) as avg_time
-        FROM results 
+        FROM results
         WHERE user_id = ?
         GROUP BY factor_a, factor_b
     `;
-    
-    db.all(sql, [user_id], (err, rows) => {
-        if (err) {
-            res.status(400).json({"error": err.message});
-            return;
-        }
-        
-        // Return a map or list
+
+    try {
+        const rows = db.prepare(sql).all(user_id);
         res.json({
             "message": "success",
             "data": rows
         });
-    });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
 });
 
 app.listen(PORT, () => {
