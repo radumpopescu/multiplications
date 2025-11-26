@@ -1,0 +1,13 @@
+{
+  "name": "monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w frontend > frontend.log & npm run dev -w backend > backend.log &",
+    "build": "npm run build -w frontend && npm run build -w backend"
+  }
+}

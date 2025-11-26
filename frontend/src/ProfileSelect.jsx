@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { User, Plus, Rabbit, Bot, Cat, Dog, Fish, Bird } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = '/api';
 
 const ICONS = {
     rabbit: Rabbit,
