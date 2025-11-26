@@ -4,7 +4,7 @@ import axios from 'axios';
 import confetti from 'canvas-confetti';
 import { ArrowLeft, BarChart2, Delete, RotateCcw, Settings } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = '/api';
 
 export default function Quiz() {
     const navigate = useNavigate();

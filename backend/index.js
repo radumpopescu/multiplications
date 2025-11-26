@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const db = require('./database');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,8 +10,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
 // Users API
-app.get('/users', (req, res) => {
+app.get('/api/users', (req, res) => {
     try {
         const rows = db.prepare("SELECT * FROM users").all();
         res.json({
@@ -22,7 +26,7 @@ app.get('/users', (req, res) => {
     }
 });
 
-app.post('/users', (req, res) => {
+app.post('/api/users', (req, res) => {
     const { name, icon } = req.body;
     if (!name) {
         res.status(400).json({"error": "Name is required"});
@@ -46,7 +50,7 @@ app.post('/users', (req, res) => {
     }
 });
 
-app.put('/users/:id', (req, res) => {
+app.put('/api/users/:id', (req, res) => {
     const { id } = req.params;
     const { name, icon } = req.body;
 
@@ -84,7 +88,7 @@ app.put('/users/:id', (req, res) => {
 });
 
 // Results API
-app.post('/results', (req, res) => {
+app.post('/api/results', (req, res) => {
     const { user_id, factor_a, factor_b, user_answer, time_taken_ms } = req.body;
 
     if (user_id == null || factor_a == null || factor_b == null || user_answer == null || time_taken_ms == null) {
@@ -114,7 +118,7 @@ app.post('/results', (req, res) => {
 });
 
 // Stats API
-app.get('/stats/:user_id', (req, res) => {
+app.get('/api/stats/:user_id', (req, res) => {
     const { user_id } = req.params;
 
     // We want aggregated stats for each combination 0-10 x 0-10
@@ -145,6 +149,13 @@ app.get('/stats/:user_id', (req, res) => {
     }
 });
 
+// All other GET requests not handled before will return our React app
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+
+console.log('index.js loaded');
