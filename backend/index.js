@@ -149,6 +149,114 @@ app.get('/api/stats/:user_id', (req, res) => {
     }
 });
 
+// Questions API
+app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const stats = db.prepare(`
+            SELECT
+                factor_a,
+                factor_b,
+                CAST(SUM(is_correct) AS REAL) / COUNT(*) as score
+            FROM results
+            WHERE user_id = ?
+            GROUP BY factor_a, factor_b
+        `).all(user_id);
+
+        if (stats.length === 0) {
+            // If no stats, return a random question
+            const a = Math.floor(Math.random() * 11);
+            const b = Math.floor(Math.random() * 11);
+            res.json({ "message": "success", "data": { a, b } });
+            return;
+        }
+
+        let lowest_score = 1;
+        for (const stat of stats) {
+            if (stat.score < lowest_score) {
+                lowest_score = stat.score;
+            }
+        }
+
+        const lowest_questions = stats.filter(stat => stat.score === lowest_score);
+
+        const next_question = lowest_questions[Math.floor(Math.random() * lowest_questions.length)];
+
+        res.json({
+            "message": "success",
+            "data": { a: next_question.factor_a, b: next_question.factor_b }
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
+app.get('/api/questions/all-remaining/:user_id', (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const all_questions = [];
+        for (let i = 0; i <= 10; i++) {
+            for (let j = 0; j <= 10; j++) {
+                all_questions.push({ a: i, b: j });
+            }
+        }
+
+        const answered_questions_rows = db.prepare(`
+            SELECT DISTINCT factor_a, factor_b
+            FROM results
+            WHERE user_id = ?
+        `).all(user_id);
+
+        const answered_questions = new Set(answered_questions_rows.map(q => `${q.factor_a},${q.factor_b}`));
+
+        const unanswered = all_questions.filter(q => !answered_questions.has(`${q.a},${q.b}`));
+
+        if (unanswered.length === 0) {
+            res.json({ "message": "success", "data": null });
+            return;
+        }
+
+        const next_question = unanswered[Math.floor(Math.random() * unanswered.length)];
+
+        res.json({
+            "message": "success",
+            "data": next_question
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
+app.get('/api/unanswered-questions/:user_id', (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const all_questions = [];
+        for (let i = 0; i <= 10; i++) {
+            for (let j = 0; j <= 10; j++) {
+                all_questions.push({ a: i, b: j });
+            }
+        }
+
+        const answered_questions_rows = db.prepare(`
+            SELECT DISTINCT factor_a, factor_b
+            FROM results
+            WHERE user_id = ?
+        `).all(user_id);
+
+        const answered_questions = new Set(answered_questions_rows.map(q => `${q.factor_a},${q.factor_b}`));
+
+        const unanswered = all_questions.filter(q => !answered_questions.has(`${q.a},${q.b}`));
+
+        res.json({
+            "message": "success",
+            "data": unanswered
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
+
 // All other GET requests not handled before will return our React app
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));

@@ -1,42 +1,76 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import confetti from 'canvas-confetti';
-import { ArrowLeft, BarChart2, Delete, RotateCcw, Settings } from 'lucide-react';
+import { ArrowLeft, BarChart2, Delete, User, Edit, LogOut } from 'lucide-react';
 
 const API_URL = '/api';
 
 export default function Quiz() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [user, setUser] = useState(null);
     const [question, setQuestion] = useState({ a: 0, b: 0 });
     const [input, setInput] = useState('');
     const [startTime, setStartTime] = useState(Date.now());
     const [feedback, setFeedback] = useState(null); // 'correct' | 'wrong' | null
     const [streak, setStreak] = useState(0);
-    
+    const [mode, setMode] = useState('random');
+    const [showMenu, setShowMenu] = useState(false);
+
+
     useEffect(() => {
         const storedUser = localStorage.getItem('currentUser');
         if (!storedUser) {
             navigate('/');
             return;
         }
-        setUser(JSON.parse(storedUser));
-        generateQuestion();
-    }, []);
+        const currentUser = JSON.parse(storedUser);
+        setUser(currentUser);
+
+        const searchParams = new URLSearchParams(location.search);
+        const newMode = searchParams.get('mode') || 'random';
+        setMode(newMode);
+    }, [location]);
+
+    useEffect(() => {
+        if (user && mode) {
+            generateQuestion();
+        }
+    }, [user, mode]);
     
-    const generateQuestion = () => {
-        const a = Math.floor(Math.random() * 11);
-        const b = Math.floor(Math.random() * 11);
-        setQuestion({ a, b });
+    const generateQuestion = async () => {
         setInput('');
         setStartTime(Date.now());
         setFeedback(null);
+
+        try {
+            let nextQuestion;
+            if (mode === 'random') {
+                const a = Math.floor(Math.random() * 11);
+                const b = Math.floor(Math.random() * 11);
+                nextQuestion = { a, b };
+            } else {
+                const response = await axios.get(`${API_URL}/questions/${mode}/${user.id}`);
+                nextQuestion = response.data.data;
+                if (!nextQuestion) {
+                    alert("Congratulations! You've completed all questions in this mode.");
+                    navigate('/mode-select');
+                    return;
+                }
+            }
+            setQuestion(nextQuestion);
+        } catch (error) {
+            console.error(`Error generating question for mode ${mode}`, error);
+            const a = Math.floor(Math.random() * 11);
+            const b = Math.floor(Math.random() * 11);
+            setQuestion({ a, b });
+        }
     };
     
     const handleInput = (num) => {
-        if (feedback) return; // Block input during feedback animation
-        if (input.length >= 3) return; // Limit length
+        if (feedback) return;
+        if (input.length >= 3) return;
         setInput(prev => prev + num);
     };
     
@@ -53,10 +87,8 @@ export default function Quiz() {
         const isCorrect = answer === correctAnswer;
         const timeTaken = Date.now() - startTime;
         
-        // Visual feedback
         setFeedback(isCorrect ? 'correct' : 'wrong');
         
-        // Save result
         try {
             await axios.post(`${API_URL}/results`, {
                 user_id: user.id,
@@ -73,7 +105,6 @@ export default function Quiz() {
             const newStreak = streak + 1;
             setStreak(newStreak);
             
-            // Trigger confetti on every correct answer
             const isMilestone = newStreak % 10 === 0;
             triggerConfetti(isMilestone);
             
@@ -83,7 +114,7 @@ export default function Quiz() {
             setTimeout(() => {
                 setFeedback(null);
                 setInput('');
-                setStartTime(Date.now()); // Reset timer for retry
+                setStartTime(Date.now());
             }, 1000);
         }
     };
@@ -95,21 +126,10 @@ export default function Quiz() {
             origin: { y: 0.6 }
         };
         if (isMilestone) {
-            // Bigger burst for milestones
             confetti(options);
             setTimeout(() => {
-                confetti({
-                    ...options,
-                    particleCount: 100,
-                    angle: 60,
-                    spread: 55
-                });
-                confetti({
-                    ...options,
-                    particleCount: 100,
-                    angle: 120,
-                    spread: 55
-                });
+                confetti({ ...options, particleCount: 100, angle: 60, spread: 55 });
+                confetti({ ...options, particleCount: 100, angle: 120, spread: 55 });
             }, 250);
         } else {
             confetti(options);
@@ -121,25 +141,43 @@ export default function Quiz() {
             feedback === 'correct' ? 'bg-green-100' : 
             feedback === 'wrong' ? 'bg-red-100' : 'bg-yellow-50'
         }`}>
-            {/* Header */}
             <div className="p-4 flex justify-between items-center">
-                <button onClick={() => navigate('/')} className="p-2 rounded-full hover:bg-black/10">
+                <button onClick={() => navigate('/mode-select')} className="p-2 rounded-full hover:bg-black/10">
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                 </button>
                 <div className="font-bold text-gray-600 text-lg">
                     Streak: <span className="text-orange-500">{streak}</span> 🔥
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={() => navigate('/stats')} className="p-2 rounded-full hover:bg-black/10">
-                        <BarChart2 className="w-6 h-6 text-gray-600" />
+                    <button onClick={() => navigate('/stats')} className="p-3 rounded-full hover:bg-black/10">
+                        <BarChart2 className="w-7 h-7 text-gray-600" />
                     </button>
-                    <button onClick={() => navigate('/edit-profile')} className="p-2 rounded-full hover:bg-black/10">
-                        <Settings className="w-6 h-6 text-gray-600" />
-                    </button>
+                    <div className="relative">
+                        <button onClick={() => setShowMenu(!showMenu)} className="p-3 rounded-full hover:bg-black/10">
+                            <User className="w-7 h-7 text-gray-600" />
+                        </button>
+                        {showMenu && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                                <button
+                                    onClick={() => navigate('/edit-profile')}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit Profile
+                                </button>
+                                <button
+                                    onClick={() => navigate('/')}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                    <LogOut className="w-4 h-4 mr-2" />
+                                    Change Profile
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
             
-            {/* Question Area */}
             <div className="flex-1 flex flex-col items-center justify-center mb-8">
                 <div className="text-8xl font-bold text-gray-800 mb-8 flex items-center gap-4">
                     <span>{question.a}</span>
@@ -163,7 +201,6 @@ export default function Quiz() {
                 )}
             </div>
             
-            {/* Numpad */}
             <div className="bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] p-6 pb-10">
                 <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
