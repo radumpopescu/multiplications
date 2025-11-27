@@ -65,13 +65,13 @@ export default function ProfileSelect() {
     };
 
     return (
-        <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center p-4">
-            <h1 className="text-4xl font-bold text-blue-600 mb-8">Who is playing?</h1>
+        <div className="h-screen bg-blue-50 flex flex-col items-center justify-center p-4 overflow-auto">
+            <h1 className="text-3xl sm:text-4xl font-bold text-blue-600 mb-6 sm:mb-8">Who is playing?</h1>
             
             {!isCreating ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-2xl">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl">
                     {users.map(user => (
-                        <button 
+                        <button
                             key={user.id}
                             onClick={() => selectUser(user)}
                             className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex flex-col items-center gap-4 border-4 border-transparent hover:border-blue-300"

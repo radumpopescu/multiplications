@@ -44,34 +44,36 @@ export default function ModeSelect() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-            <div className="absolute top-4 left-4">
+        <div className="h-screen bg-gray-100 flex flex-col">
+            <div className="p-4">
                 <button onClick={() => navigate('/')} className="p-2 rounded-full hover:bg-black/10">
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                 </button>
             </div>
-            <h1 className="text-4xl font-bold mb-8">Select a Mode</h1>
-            <div className="space-y-4">
-                <button
-                    onClick={() => handleModeSelect('random')}
-                    className="w-64 bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200"
-                >
-                    Random Any
-                </button>
-                <button
-                    onClick={() => handleModeSelect('lowest-scores')}
-                    className="w-64 bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200"
-                >
-                    Improve Lowest Scores
-                </button>
-                {unansweredQuestions.length > 0 && (
+            <div className="flex-grow flex flex-col items-center justify-center p-4">
+                <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">Select a Mode</h1>
+                <div className="space-y-4 w-full max-w-xs sm:max-w-sm">
                     <button
-                        onClick={() => handleModeSelect('all-remaining')}
-                        className="w-64 bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200"
+                        onClick={() => handleModeSelect('random')}
+                        className="w-full bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200 transition-colors"
                     >
-                        Fill the Board
+                        Random Any
                     </button>
-                )}
+                    <button
+                        onClick={() => handleModeSelect('lowest-scores')}
+                        className="w-full bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200 transition-colors"
+                    >
+                        Improve Lowest Scores
+                    </button>
+                    {unansweredQuestions.length > 0 && (
+                        <button
+                            onClick={() => handleModeSelect('all-remaining')}
+                            className="w-full bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200 transition-colors"
+                        >
+                            Fill the Board
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

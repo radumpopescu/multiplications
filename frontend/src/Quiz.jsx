@@ -137,8 +137,8 @@ export default function Quiz() {
     };
     
     return (
-        <div className={`min-h-screen flex flex-col transition-colors duration-500 ${
-            feedback === 'correct' ? 'bg-green-100' : 
+        <div className={`h-screen overflow-hidden flex flex-col transition-colors duration-500 ${
+            feedback === 'correct' ? 'bg-green-100' :
             feedback === 'wrong' ? 'bg-red-100' : 'bg-yellow-50'
         }`}>
             <div className="p-4 flex justify-between items-center">
@@ -178,58 +178,60 @@ export default function Quiz() {
                 </div>
             </div>
             
-            <div className="flex-1 flex flex-col items-center justify-center mb-8">
-                <div className="text-8xl font-bold text-gray-800 mb-8 flex items-center gap-4">
-                    <span>{question.a}</span>
-                    <span className="text-gray-400">×</span>
-                    <span>{question.b}</span>
+            <div className="flex-1 flex flex-col landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-8 landscape:p-8">
+                <div className="flex-1 flex flex-col items-center justify-center mb-4 landscape:mb-0">
+                    <div className="text-7xl sm:text-8xl font-bold text-gray-800 mb-4 flex items-center gap-4">
+                        <span>{question.a}</span>
+                        <span className="text-gray-400">×</span>
+                        <span>{question.b}</span>
+                    </div>
+
+                    <div className={`h-20 sm:h-24 min-w-[120px] px-8 flex items-center justify-center text-5xl sm:text-6xl font-bold rounded-2xl border-4 transition-all ${
+                        feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-600' :
+                        feedback === 'wrong' ? 'border-red-500 bg-red-50 text-red-600' :
+                        'border-gray-300 bg-white text-gray-800 shadow-inner'
+                    }`}>
+                        {input}
+                    </div>
+
+                    {feedback === 'wrong' && (
+                        <p className="mt-4 text-red-500 font-bold text-xl animate-bounce">Try Again!</p>
+                    )}
+                    {feedback === 'correct' && (
+                        <p className="mt-4 text-green-500 font-bold text-xl animate-bounce">Great Job!</p>
+                    )}
                 </div>
                 
-                <div className={`h-24 min-w-[120px] px-8 flex items-center justify-center text-6xl font-bold rounded-2xl border-4 transition-all ${
-                    feedback === 'correct' ? 'border-green-500 bg-green-50 text-green-600' :
-                    feedback === 'wrong' ? 'border-red-500 bg-red-50 text-red-600' :
-                    'border-gray-300 bg-white text-gray-800 shadow-inner'
-                }`}>
-                    {input}
-                </div>
-                
-                {feedback === 'wrong' && (
-                    <p className="mt-4 text-red-500 font-bold text-xl animate-bounce">Try Again!</p>
-                )}
-                {feedback === 'correct' && (
-                    <p className="mt-4 text-green-500 font-bold text-xl animate-bounce">Great Job!</p>
-                )}
-            </div>
-            
-            <div className="bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] p-6 pb-10">
-                <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                <div className="bg-white rounded-t-3xl landscape:rounded-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.1)] p-4 sm:p-6 pb-8 sm:pb-10 landscape:pb-4 landscape:sm:pb-6 landscape:w-full landscape:max-w-[320px] landscape:shrink-0">
+                    <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-md mx-auto landscape:max-w-none landscape:mx-0">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                            <button
+                                key={num}
+                                onClick={() => handleInput(num.toString())}
+                                className="h-14 sm:h-16 rounded-xl bg-blue-50 text-blue-600 text-3xl font-bold hover:bg-blue-100 active:bg-blue-200 active:scale-95 transition-all shadow-sm"
+                            >
+                                {num}
+                            </button>
+                        ))}
                         <button
-                            key={num}
-                            onClick={() => handleInput(num.toString())}
-                            className="h-16 rounded-xl bg-blue-50 text-blue-600 text-3xl font-bold hover:bg-blue-100 active:bg-blue-200 active:scale-95 transition-all shadow-sm"
+                            onClick={handleDelete}
+                            className="h-14 sm:h-16 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 active:bg-red-200 active:scale-95 transition-all shadow-sm"
                         >
-                            {num}
+                            <Delete className="w-8 h-8" />
                         </button>
-                    ))}
-                    <button
-                        onClick={handleDelete}
-                        className="h-16 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 active:bg-red-200 active:scale-95 transition-all shadow-sm"
-                    >
-                        <Delete className="w-8 h-8" />
-                    </button>
-                    <button
-                        onClick={() => handleInput('0')}
-                        className="h-16 rounded-xl bg-blue-50 text-blue-600 text-3xl font-bold hover:bg-blue-100 active:bg-blue-200 active:scale-95 transition-all shadow-sm"
-                    >
-                        0
-                    </button>
-                    <button
-                        onClick={checkAnswer}
-                        className="h-16 rounded-xl bg-green-500 text-white flex items-center justify-center hover:bg-green-600 active:bg-green-700 active:scale-95 transition-all shadow-md"
-                    >
-                        <span className="text-xl font-bold">GO</span>
-                    </button>
+                        <button
+                            onClick={() => handleInput('0')}
+                            className="h-14 sm:h-16 rounded-xl bg-blue-50 text-blue-600 text-3xl font-bold hover:bg-blue-100 active:bg-blue-200 active:scale-95 transition-all shadow-sm"
+                        >
+                            0
+                        </button>
+                        <button
+                            onClick={checkAnswer}
+                            className="h-14 sm:h-16 rounded-xl bg-green-500 text-white flex items-center justify-center hover:bg-green-600 active:bg-green-700 active:scale-95 transition-all shadow-md"
+                        >
+                            <span className="text-xl font-bold">GO</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
