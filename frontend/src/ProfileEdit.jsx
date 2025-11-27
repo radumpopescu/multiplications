@@ -140,5 +140,6 @@ export default function ProfileEdit() {
                 </form>
             </div>
         </div>
+        </div>
     );
 }
