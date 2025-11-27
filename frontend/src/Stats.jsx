@@ -82,19 +82,19 @@ export default function Stats() {
         return 'bg-blue-100 text-blue-800'; // Decent
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    if (loading) return <div className="h-screen flex items-center justify-center">Loading...</div>;
 
     return (
-        <div className="min-h-screen bg-white flex flex-col">
+        <div className="h-screen bg-white flex flex-col">
             <div className="p-4 flex items-center justify-between bg-blue-50 sticky top-0 z-10 shadow-sm">
                 <button onClick={() => navigate('/quiz')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
                     <ArrowLeft className="w-6 h-6" />
-                    <span className="font-bold">Back to Quiz</span>
+                    <span className="font-bold hidden sm:inline">Back to Quiz</span>
                 </button>
-                <h1 className="text-xl font-bold text-blue-800">{user?.name}'s Progress</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-blue-800 text-center">{user?.name}'s Progress</h1>
                 <div className="flex items-center gap-2">
                     <button onClick={fetchStats} className="p-2 rounded-full hover:bg-blue-200 text-blue-600">
-                        <RefreshCw className="w-6 h-6" />
+                        <RefreshCw className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
                     <button onClick={() => navigate('/edit-profile')} className="p-2 rounded-full hover:bg-blue-200 text-blue-600">
                         <Settings className="w-6 h-6" />

@@ -41,7 +41,7 @@ export default function ProfileEdit() {
     }, [navigate]);
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+        return <div className="h-screen flex items-center justify-center">Loading...</div>;
     }
 
     const handleSave = async (e) => {
@@ -70,33 +70,33 @@ export default function ProfileEdit() {
     };
 
     return (
-        <div className="min-h-screen bg-blue-50 flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-md mb-4 flex items-center justify-between">
+        <div className="h-screen bg-blue-50 flex flex-col">
+            <div className="p-4">
                 <button 
                     onClick={() => navigate('/quiz')} 
                     className="p-2 rounded-full hover:bg-gray-200"
                 >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                 </button>
-                <h1 className="text-2xl font-bold text-blue-600 flex-1 text-center">Edit Profile</h1>
-                <div className="w-8" /> {/* Spacer */}
             </div>
-            
-            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-                <form onSubmit={handleSave} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
-                            placeholder="Enter your name"
-                            disabled={saving}
-                        />
-                    </div>
-                    
-                    <div>
+
+            <div className="flex-grow flex flex-col items-center justify-center p-4 pt-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-6 text-center">Edit Profile</h1>
+                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md">
+                    <form onSubmit={handleSave} className="space-y-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-lg"
+                                placeholder="Enter your name"
+                                disabled={saving}
+                            />
+                        </div>
+
+                        <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Choose Avatar</label>
                         <div className="grid grid-cols-3 gap-3">
                             {ICON_KEYS.map(iconKey => {
@@ -139,6 +139,7 @@ export default function ProfileEdit() {
                     </div>
                 </form>
             </div>
+        </div>
         </div>
     );
 }
