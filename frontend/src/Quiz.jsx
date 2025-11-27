@@ -39,6 +39,16 @@ export default function Quiz() {
         }
     }, [user, mode]);
     
+    useEffect(() => {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, []);
+    
     const generateQuestion = async () => {
         setInput('');
         setStartTime(Date.now());
@@ -178,7 +188,7 @@ export default function Quiz() {
                 </div>
             </div>
             
-            <div className="flex-1 flex flex-col landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-8 landscape:p-8">
+            <div className="flex-1 flex flex-col landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-8 landscape:p-8 pb-12 sm:pb-16">
                 <div className="flex-1 flex flex-col items-center justify-center mb-4 landscape:mb-0">
                     <div className="text-7xl sm:text-8xl font-bold text-gray-800 mb-4 flex items-center gap-4">
                         <span>{question.a}</span>
