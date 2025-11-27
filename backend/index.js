@@ -10,6 +10,28 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// --- Helper Functions ---
+
+function getUnansweredQuestions(user_id) {
+    const all_questions = [];
+    for (let i = 0; i <= 10; i++) {
+        for (let j = 0; j <= 10; j++) {
+            all_questions.push({ a: i, b: j });
+        }
+    }
+
+    const answered_questions_rows = db.prepare(`
+        SELECT DISTINCT factor_a, factor_b
+        FROM results
+        WHERE user_id = ?
+    `).all(user_id);
+
+    const answered_questions = new Set(answered_questions_rows.map(q => `${q.factor_a},${q.factor_b}`));
+
+    return all_questions.filter(q => !answered_questions.has(`${q.a},${q.b}`));
+}
+
+
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
@@ -121,11 +143,6 @@ app.post('/api/results', (req, res) => {
 app.get('/api/stats/:user_id', (req, res) => {
     const { user_id } = req.params;
 
-    // We want aggregated stats for each combination 0-10 x 0-10
-    // But since order doesn't matter for multiplication (2x3 is same as 3x2),
-    // we might want to group them or just return raw data and let frontend handle.
-    // However, for the grid view, usually 2x3 and 3x2 are distinct cells.
-
     const sql = `
         SELECT
             factor_a,
@@ -153,6 +170,18 @@ app.get('/api/stats/:user_id', (req, res) => {
 app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
     const { user_id } = req.params;
     try {
+        const problematic_questions = db.prepare(`
+            SELECT DISTINCT factor_a, factor_b
+            FROM results
+            WHERE user_id = ? AND (is_correct = 0 OR time_taken_ms > 5000)
+        `).all(user_id);
+
+        if (problematic_questions.length > 0) {
+            const next_question = problematic_questions[Math.floor(Math.random() * problematic_questions.length)];
+            res.json({ "message": "success", "data": { a: next_question.factor_a, b: next_question.factor_b } });
+            return;
+        }
+
         const stats = db.prepare(`
             SELECT
                 factor_a,
@@ -164,7 +193,6 @@ app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
         `).all(user_id);
 
         if (stats.length === 0) {
-            // If no stats, return a random question
             const a = Math.floor(Math.random() * 11);
             const b = Math.floor(Math.random() * 11);
             res.json({ "message": "success", "data": { a, b } });
@@ -172,16 +200,14 @@ app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
         }
 
         let lowest_score = 1;
-        for (const stat of stats) {
+        stats.forEach(stat => {
             if (stat.score < lowest_score) {
                 lowest_score = stat.score;
             }
-        }
+        });
 
         const lowest_questions = stats.filter(stat => stat.score === lowest_score);
-
         const next_question = lowest_questions[Math.floor(Math.random() * lowest_questions.length)];
-
         res.json({
             "message": "success",
             "data": { a: next_question.factor_a, b: next_question.factor_b }
@@ -194,30 +220,12 @@ app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
 app.get('/api/questions/all-remaining/:user_id', (req, res) => {
     const { user_id } = req.params;
     try {
-        const all_questions = [];
-        for (let i = 0; i <= 10; i++) {
-            for (let j = 0; j <= 10; j++) {
-                all_questions.push({ a: i, b: j });
-            }
-        }
-
-        const answered_questions_rows = db.prepare(`
-            SELECT DISTINCT factor_a, factor_b
-            FROM results
-            WHERE user_id = ?
-        `).all(user_id);
-
-        const answered_questions = new Set(answered_questions_rows.map(q => `${q.factor_a},${q.factor_b}`));
-
-        const unanswered = all_questions.filter(q => !answered_questions.has(`${q.a},${q.b}`));
-
+        const unanswered = getUnansweredQuestions(user_id);
         if (unanswered.length === 0) {
             res.json({ "message": "success", "data": null });
             return;
         }
-
         const next_question = unanswered[Math.floor(Math.random() * unanswered.length)];
-
         res.json({
             "message": "success",
             "data": next_question
@@ -230,23 +238,7 @@ app.get('/api/questions/all-remaining/:user_id', (req, res) => {
 app.get('/api/unanswered-questions/:user_id', (req, res) => {
     const { user_id } = req.params;
     try {
-        const all_questions = [];
-        for (let i = 0; i <= 10; i++) {
-            for (let j = 0; j <= 10; j++) {
-                all_questions.push({ a: i, b: j });
-            }
-        }
-
-        const answered_questions_rows = db.prepare(`
-            SELECT DISTINCT factor_a, factor_b
-            FROM results
-            WHERE user_id = ?
-        `).all(user_id);
-
-        const answered_questions = new Set(answered_questions_rows.map(q => `${q.factor_a},${q.factor_b}`));
-
-        const unanswered = all_questions.filter(q => !answered_questions.has(`${q.a},${q.b}`));
-
+        const unanswered = getUnansweredQuestions(user_id);
         res.json({
             "message": "success",
             "data": unanswered

@@ -56,7 +56,7 @@ export default function ModeSelect() {
                     onClick={() => handleModeSelect('random')}
                     className="w-64 bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200"
                 >
-                    Random
+                    Random Any
                 </button>
                 <button
                     onClick={() => handleModeSelect('lowest-scores')}
@@ -69,7 +69,7 @@ export default function ModeSelect() {
                         onClick={() => handleModeSelect('all-remaining')}
                         className="w-64 bg-white p-4 rounded-lg shadow-md text-lg font-semibold hover:bg-gray-200"
                     >
-                        Practice All
+                        Fill the Board
                     </button>
                 )}
             </div>
