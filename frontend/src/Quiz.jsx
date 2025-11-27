@@ -78,18 +78,21 @@ export default function Quiz() {
         }
     };
     
-    const handleInput = (num) => {
+    const handleInput = (e, num) => {
+        if (e) e.preventDefault();
         if (feedback) return;
         if (input.length >= 3) return;
         setInput(prev => prev + num);
     };
     
-    const handleDelete = () => {
+    const handleDelete = (e) => {
+        if (e) e.preventDefault();
         if (feedback) return;
         setInput(prev => prev.slice(0, -1));
     };
     
-    const checkAnswer = async () => {
+    const checkAnswer = async (e) => {
+        if (e) e.preventDefault();
         if (!input) return;
         
         const answer = parseInt(input);
@@ -217,26 +220,26 @@ export default function Quiz() {
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                             <button
                                 key={num}
-                                onClick={() => handleInput(num.toString())}
+                                onPointerDown={(e) => handleInput(e, num.toString())}
                                 className="h-14 sm:h-16 rounded-xl bg-blue-50 text-blue-600 text-3xl font-bold hover:bg-blue-100 active:bg-blue-200 active:scale-95 transition-all shadow-sm"
                             >
                                 {num}
                             </button>
                         ))}
                         <button
-                            onClick={handleDelete}
+                            onPointerDown={(e) => handleDelete(e)}
                             className="h-14 sm:h-16 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 active:bg-red-200 active:scale-95 transition-all shadow-sm"
                         >
                             <Delete className="w-8 h-8" />
                         </button>
                         <button
-                            onClick={() => handleInput('0')}
+                            onPointerDown={(e) => handleInput(e, '0')}
                             className="h-14 sm:h-16 rounded-xl bg-blue-50 text-blue-600 text-3xl font-bold hover:bg-blue-100 active:bg-blue-200 active:scale-95 transition-all shadow-sm"
                         >
                             0
                         </button>
                         <button
-                            onClick={checkAnswer}
+                            onPointerDown={checkAnswer}
                             className="h-14 sm:h-16 rounded-xl bg-green-500 text-white flex items-center justify-center hover:bg-green-600 active:bg-green-700 active:scale-95 transition-all shadow-md"
                         >
                             <span className="text-xl font-bold">GO</span>
