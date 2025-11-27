@@ -56,7 +56,7 @@ export default function ProfileSelect() {
 
     const selectUser = (user) => {
         localStorage.setItem('currentUser', JSON.stringify(user));
-        navigate('/quiz');
+        navigate('/mode-select');
     };
 
     const IconComponent = (iconName) => {
