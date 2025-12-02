@@ -12,10 +12,18 @@ app.use(bodyParser.json());
 
 // --- Helper Functions ---
 
+function getDisabledFactors(user_id) {
+    const rows = db.prepare('SELECT factor FROM disabled_factors WHERE user_id = ?').all(user_id);
+    return new Set(rows.map(r => r.factor));
+}
+
 function getUnansweredQuestions(user_id) {
+    const disabled = getDisabledFactors(user_id);
     const all_questions = [];
     for (let i = 0; i <= 10; i++) {
+        if (disabled.has(i)) continue;
         for (let j = 0; j <= 10; j++) {
+            if (disabled.has(j)) continue;
             all_questions.push({ a: i, b: j });
         }
     }
@@ -166,15 +174,60 @@ app.get('/api/stats/:user_id', (req, res) => {
     }
 });
 
+// Settings API
+app.get('/api/settings/:user_id/disabled', (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const disabled = getDisabledFactors(user_id);
+        res.json({
+            "message": "success",
+            "data": Array.from(disabled)
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
+app.post('/api/settings/:user_id/toggle-disable', (req, res) => {
+    const { user_id } = req.params;
+    const { factor } = req.body;
+
+    if (factor === undefined) {
+        res.status(400).json({"error": "Factor is required"});
+        return;
+    }
+
+    try {
+        const exists = db.prepare('SELECT 1 FROM disabled_factors WHERE user_id = ? AND factor = ?').get(user_id, factor);
+        
+        if (exists) {
+            db.prepare('DELETE FROM disabled_factors WHERE user_id = ? AND factor = ?').run(user_id, factor);
+        } else {
+            db.prepare('INSERT INTO disabled_factors (user_id, factor) VALUES (?, ?)').run(user_id, factor);
+        }
+
+        const disabled = getDisabledFactors(user_id);
+        res.json({
+            "message": "success",
+            "data": Array.from(disabled)
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
 // Questions API
 app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
     const { user_id } = req.params;
     try {
+        const disabled = getDisabledFactors(user_id);
+
         const problematic_questions = db.prepare(`
             SELECT DISTINCT factor_a, factor_b
             FROM results
             WHERE user_id = ? AND (is_correct = 0 OR time_taken_ms > 5000)
-        `).all(user_id);
+        `).all(user_id)
+        .filter(q => !disabled.has(q.factor_a) && !disabled.has(q.factor_b));
 
         if (problematic_questions.length > 0) {
             const next_question = problematic_questions[Math.floor(Math.random() * problematic_questions.length)];
@@ -190,11 +243,19 @@ app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
             FROM results
             WHERE user_id = ?
             GROUP BY factor_a, factor_b
-        `).all(user_id);
+        `).all(user_id)
+        .filter(s => !disabled.has(s.factor_a) && !disabled.has(s.factor_b));
 
         if (stats.length === 0) {
-            const a = Math.floor(Math.random() * 11);
-            const b = Math.floor(Math.random() * 11);
+            const validFactors = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(f => !disabled.has(f));
+            
+            if (validFactors.length === 0) {
+                res.status(400).json({"error": "All numbers are disabled"});
+                return;
+            }
+
+            const a = validFactors[Math.floor(Math.random() * validFactors.length)];
+            const b = validFactors[Math.floor(Math.random() * validFactors.length)];
             res.json({ "message": "success", "data": { a, b } });
             return;
         }

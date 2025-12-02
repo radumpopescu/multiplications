@@ -101,6 +101,8 @@ export default function Quiz() {
   const [streak, setStreak] = useState(0);
   const [mode, setMode] = useState("random");
   const [showMenu, setShowMenu] = useState(false);
+  const [disabledFactors, setDisabledFactors] = useState([]);
+  const [loadingDisabled, setLoadingDisabled] = useState(true);
 
   // Animation Key: Changing this forces the "Explosion" animation to run
   const [questionKey, setQuestionKey] = useState(0);
@@ -119,8 +121,15 @@ export default function Quiz() {
     try {
       let nextQuestion;
       if (mode === "random") {
-        const a = Math.floor(Math.random() * 11);
-        const b = Math.floor(Math.random() * 11);
+        const validFactors = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(f => !disabledFactors.includes(f));
+        let a, b;
+        if (validFactors.length > 0) {
+            a = validFactors[Math.floor(Math.random() * validFactors.length)];
+            b = validFactors[Math.floor(Math.random() * validFactors.length)];
+        } else {
+            a = Math.floor(Math.random() * 11);
+            b = Math.floor(Math.random() * 11);
+        }
         nextQuestion = { a, b };
       } else {
         const response = await axios.get(
@@ -277,10 +286,24 @@ export default function Quiz() {
   }, [location, navigate]);
 
   useEffect(() => {
-    if (user && mode) {
+    if (user) {
+         axios.get(`${API_URL}/settings/${user.id}/disabled`)
+             .then(res => {
+                 setDisabledFactors(res.data.data);
+                 setLoadingDisabled(false);
+             })
+             .catch(err => {
+                 console.error(err);
+                 setLoadingDisabled(false);
+             });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && mode && !loadingDisabled) {
       generateQuestion();
     }
-  }, [user, mode]);
+  }, [user, mode, loadingDisabled]);
 
   // Prevent scrolling on mobile while playing
   useEffect(() => {

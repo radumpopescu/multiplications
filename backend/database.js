@@ -39,6 +39,13 @@ function initDb() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
+
+    db.exec(`CREATE TABLE IF NOT EXISTS disabled_factors (
+        user_id INTEGER NOT NULL,
+        factor INTEGER NOT NULL,
+        PRIMARY KEY (user_id, factor),
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
 }
 
 module.exports = db;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, RefreshCw, Settings } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Settings, Ban, Check } from 'lucide-react';
 
 const API_URL = '/api';
 
@@ -10,6 +10,7 @@ export default function Stats() {
     const [stats, setStats] = useState([]);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [disabledFactors, setDisabledFactors] = useState([]);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('currentUser');
@@ -23,6 +24,7 @@ export default function Stats() {
     useEffect(() => {
         if (user) {
             fetchStats();
+            fetchDisabledFactors();
         }
     }, [user]);
 
@@ -34,6 +36,24 @@ export default function Stats() {
         } catch (error) {
             console.error("Error fetching stats", error);
             setLoading(false);
+        }
+    };
+
+    const fetchDisabledFactors = async () => {
+        try {
+            const res = await axios.get(`${API_URL}/settings/${user.id}/disabled`);
+            setDisabledFactors(res.data.data);
+        } catch (error) {
+            console.error("Error fetching disabled factors", error);
+        }
+    };
+
+    const toggleDisable = async (factor) => {
+        try {
+            const res = await axios.post(`${API_URL}/settings/${user.id}/toggle-disable`, { factor });
+            setDisabledFactors(res.data.data);
+        } catch (error) {
+             console.error("Error toggling factor", error);
         }
     };
 
@@ -65,7 +85,11 @@ export default function Stats() {
         };
     };
 
-    const getCellColor = (data) => {
+    const getCellColor = (data, row, col) => {
+        if (disabledFactors.includes(row) || disabledFactors.includes(col)) {
+            return 'bg-gray-100 text-gray-400 grayscale opacity-50'; // Disabled look
+        }
+
         if (!data) return 'bg-gray-100 text-gray-300'; // No data
 
         const { accuracy, avgTime } = data;
@@ -107,19 +131,32 @@ export default function Stats() {
                     {/* Header Row */}
                     <div className="col-span-1"></div>
                     {[...Array(11)].map((_, i) => (
-                        <div key={`h-${i}`} className="font-bold text-center py-2 text-gray-500 text-xs sm:text-base">{i}</div>
+                        <div 
+                            key={`h-${i}`} 
+                            className={`font-bold text-center py-2 text-xs sm:text-base cursor-pointer select-none hover:bg-gray-100 rounded flex flex-col items-center justify-center ${disabledFactors.includes(i) ? 'text-red-400 line-through decoration-2' : 'text-gray-500'}`}
+                            onClick={() => toggleDisable(i)}
+                            title={disabledFactors.includes(i) ? "Enable this number" : "Disable this number"}
+                        >
+                            {i}
+                        </div>
                     ))}
 
                     {/* Grid */}
                     {[...Array(11)].map((_, row) => (
                         <React.Fragment key={`row-${row}`}>
                             {/* Row Header */}
-                            <div className="font-bold text-center py-2 text-gray-500 text-xs sm:text-base flex items-center justify-center">{row}</div>
+                            <div 
+                                className={`font-bold text-center py-2 text-xs sm:text-base flex items-center justify-center cursor-pointer select-none hover:bg-gray-100 rounded ${disabledFactors.includes(row) ? 'text-red-400 line-through decoration-2' : 'text-gray-500'}`}
+                                onClick={() => toggleDisable(row)}
+                                title={disabledFactors.includes(row) ? "Enable this number" : "Disable this number"}
+                            >
+                                {row}
+                            </div>
                             
                             {/* Cells */}
                             {[...Array(11)].map((_, col) => {
                                 const data = getCellData(row, col);
-                                const colorClass = getCellColor(data);
+                                const colorClass = getCellColor(data, row, col);
                                 
                                 return (
                                     <div
@@ -142,6 +179,7 @@ export default function Stats() {
             </div>
             
             <div className="p-4 bg-gray-50 text-xs text-gray-500 text-center">
+                Click row/column headers to enable/disable numbers. <br/>
                 Green: Fast & Accurate • Yellow: Good but Slow • Red: Needs Practice
             </div>
         </div>
