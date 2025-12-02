@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import confetti from "canvas-confetti";
 import { ArrowLeft, BarChart2, Delete, User, Edit, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import TimerCircle from './TimerCircle'; // NEW: Import TimerCircle
 
 const API_URL = "/api";
 
@@ -103,6 +104,8 @@ export default function Quiz() {
   const [showMenu, setShowMenu] = useState(false);
   const [disabledFactors, setDisabledFactors] = useState([]);
   const [loadingDisabled, setLoadingDisabled] = useState(true);
+  const [targetTime, setTargetTime] = useState(null);
+  const [timerActive, setTimerActive] = useState(false);
 
   // Animation Key: Changing this forces the "Explosion" animation to run
   const [questionKey, setQuestionKey] = useState(0);
@@ -114,8 +117,10 @@ export default function Quiz() {
   const generateQuestion = async () => {
     setInput("");
     setLastWrongAnswer(null);
-    setStartTime(Date.now()); // Use arrow function for initializer, but since set, it's fine; wait, for set it's okay
+    setStartTime(Date.now()); 
     setFeedback(null);
+    setTargetTime(null); // Reset target time
+    setTimerActive(false); // Deactivate timer immediately
     setQuestionKey((prev) => prev + 1); // Trigger Enter animation
 
     try {
@@ -145,13 +150,36 @@ export default function Quiz() {
         }
       }
       setQuestion(nextQuestion);
+      setTimeout(() => {
+        setTimerActive(true);
+      }, 1000); // 1 second delay
     } catch (error) {
       console.error(`Error generating question`, error);
       const a = Math.floor(Math.random() * 11);
       const b = Math.floor(Math.random() * 11);
       setQuestion({ a, b });
+      setTimeout(() => {
+        setTimerActive(true);
+      }, 1000); // 1 second delay
     }
   };
+
+  // Fetch stats for the current question
+  useEffect(() => {
+      if (user && question) {
+          axios.get(`${API_URL}/stats/${user.id}/pair`, {
+              params: { a: question.a, b: question.b }
+          })
+          .then(res => {
+              if (res.data.data && res.data.data.avg_time) {
+                  setTargetTime(res.data.data.avg_time);
+              } else {
+                  setTargetTime(null);
+              }
+          })
+          .catch(err => console.error("Error fetching question stats", err));
+      }
+  }, [question, user]);
 
   const handleInput = (e, num) => {
     if (e) e.preventDefault();
@@ -271,6 +299,17 @@ export default function Quiz() {
     }
   };
 
+  // NEW: Keyboard input handler
+  const handleKeyDown = useCallback((event) => {
+    if (event.key >= '0' && event.key <= '9') {
+      handleInput(null, event.key);
+    } else if (event.key === 'Enter') {
+      checkAnswer();
+    } else if (event.key === 'Backspace' || event.key === 'Delete') {
+      handleDelete();
+    }
+  }, [handleInput, checkAnswer, handleDelete]); // Dependencies for useCallback
+
   useEffect(() => {
     const storedUser = localStorage.getItem("currentUser");
     if (!storedUser) {
@@ -304,6 +343,14 @@ export default function Quiz() {
       generateQuestion();
     }
   }, [user, mode, loadingDisabled]);
+
+  // NEW: Add keyboard event listener
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   // Prevent scrolling on mobile while playing
   useEffect(() => {
@@ -375,7 +422,12 @@ export default function Quiz() {
 
       {/* Main Content */}
       <div className="flex relative flex-col flex-1 pb-12 landscape:flex-row landscape:items-center landscape:justify-center landscape:gap-8 landscape:p-8 sm:pb-16">
-        <div className="flex flex-col flex-1 justify-center items-center mb-4 w-full landscape:mb-0">
+        <div className="flex flex-col flex-1 justify-center items-center mb-4 w-full landscape:mb-0 relative">
+          {/* Timer Circle - Top Right of this section */}
+          <div className="absolute top-4 right-4 sm:top-10 sm:right-10 z-0">
+             <TimerCircle startTime={startTime} targetTime={targetTime} timerActive={timerActive} />
+          </div>
+
           {/* QUESTION ANIMATION CONTAINER */}
           {/* mode="wait" ensures exit finishes before enter starts */}
           <AnimatePresence mode="wait">

@@ -174,6 +174,37 @@ app.get('/api/stats/:user_id', (req, res) => {
     }
 });
 
+app.get('/api/stats/:user_id/pair', (req, res) => {
+    const { user_id } = req.params;
+    const { a, b } = req.query;
+
+    if (a == null || b == null) {
+        res.status(400).json({"error": "Missing factors a and b"});
+        return;
+    }
+
+    const sql = `
+        SELECT
+            AVG(time_taken_ms) as avg_time,
+            MIN(time_taken_ms) as best_time
+        FROM results
+        WHERE user_id = ? AND (
+            (factor_a = ? AND factor_b = ?) OR
+            (factor_a = ? AND factor_b = ?)
+        ) AND is_correct = 1
+    `;
+
+    try {
+        const row = db.prepare(sql).get(user_id, a, b, b, a);
+        res.json({
+            "message": "success",
+            "data": row
+        });
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
 // Settings API
 app.get('/api/settings/:user_id/disabled', (req, res) => {
     const { user_id } = req.params;
