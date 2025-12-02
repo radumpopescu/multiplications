@@ -105,7 +105,11 @@ export default function Quiz() {
   const [disabledFactors, setDisabledFactors] = useState([]);
   const [loadingDisabled, setLoadingDisabled] = useState(true);
   const [targetTime, setTargetTime] = useState(null);
+  const [bestTime, setBestTime] = useState(null);
   const [timerActive, setTimerActive] = useState(false);
+  const [finalElapsed, setFinalElapsed] = useState(null);
+  const [beatAverage, setBeatAverage] = useState(false);
+  const [newRecord, setNewRecord] = useState(false);
 
   // Animation Key: Changing this forces the "Explosion" animation to run
   const [questionKey, setQuestionKey] = useState(0);
@@ -120,7 +124,11 @@ export default function Quiz() {
     setStartTime(Date.now()); 
     setFeedback(null);
     setTargetTime(null); // Reset target time
+    setBestTime(null);
     setTimerActive(false); // Deactivate timer immediately
+    setFinalElapsed(null);
+    setBeatAverage(false);
+    setNewRecord(false);
     setQuestionKey((prev) => prev + 1); // Trigger Enter animation
 
     try {
@@ -153,10 +161,15 @@ export default function Quiz() {
               params: { a: question.a, b: question.b }
           })
           .then(res => {
-              if (res.data.data && res.data.data.avg_time) {
-                  setTargetTime(res.data.data.avg_time);
+              if (res.data.data) {
+                  if (res.data.data.avg_time) setTargetTime(res.data.data.avg_time);
+                  else setTargetTime(null);
+                  
+                  if (res.data.data.best_time) setBestTime(res.data.data.best_time);
+                  else setBestTime(null);
               } else {
                   setTargetTime(null);
+                  setBestTime(null);
               }
           })
           .catch(err => console.error("Error fetching question stats", err));
@@ -204,11 +217,35 @@ export default function Quiz() {
     if (isCorrect) {
       setFeedback("correct");
       setLastWrongAnswer(null);
+      
+      // Stop Timer and Check Record
+      setFinalElapsed(timeTaken);
+      
+      let isAvgImproved = false;
+      let isRecord = false;
+
+      if (targetTime && timeTaken < targetTime) {
+          setBeatAverage(true);
+          isAvgImproved = true;
+      }
+      
+      if (bestTime && timeTaken < bestTime) {
+          setNewRecord(true);
+          isRecord = true;
+      }
+
       const newStreak = streak + 1;
       setStreak(newStreak);
 
       const isMilestone = newStreak % 10 === 0;
       triggerConfetti(isMilestone);
+      
+      if (isAvgImproved || isRecord) {
+          // Extra celebration for beating stats
+           setTimeout(() => {
+              triggerConfetti(true); // Big confetti burst
+           }, 200);
+      }
 
       try {
         await axios.post(`${API_URL}/results`, {
@@ -406,7 +443,14 @@ export default function Quiz() {
         <div className="flex flex-col flex-1 justify-center items-center mb-4 w-full landscape:mb-0 relative">
           {/* Timer Circle - Top Right of this section */}
           <div className="absolute top-4 right-4 sm:top-10 sm:right-10 z-0">
-             <TimerCircle startTime={startTime} targetTime={targetTime} timerActive={timerActive} />
+             <TimerCircle 
+                startTime={startTime} 
+                targetTime={targetTime} 
+                timerActive={timerActive} 
+                finalElapsed={finalElapsed}
+                beatAverage={beatAverage}
+                newRecord={newRecord}
+             />
           </div>
 
           {/* QUESTION ANIMATION CONTAINER */}
