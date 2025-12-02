@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, RefreshCw, Settings, Ban, Check } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Settings, Ban, Check, Play, LogOut } from 'lucide-react';
 
 const API_URL = '/api';
 
@@ -111,9 +111,9 @@ export default function Stats() {
     return (
         <div className="h-screen bg-white flex flex-col">
             <div className="p-4 flex items-center justify-between bg-blue-50 sticky top-0 z-10 shadow-sm">
-                <button onClick={() => navigate('/quiz')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-                    <ArrowLeft className="w-6 h-6" />
-                    <span className="font-bold hidden sm:inline">Back to Quiz</span>
+                <button onClick={() => navigate('/')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+                    <LogOut className="w-6 h-6" />
+                    <span className="font-bold hidden sm:inline">Change User</span>
                 </button>
                 <h1 className="text-lg sm:text-xl font-bold text-blue-800 text-center">{user?.name}'s Progress</h1>
                 <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ export default function Stats() {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-auto p-4 flex justify-center">
+            <div className="flex-1 overflow-auto p-4 flex justify-center pb-24"> {/* Added padding bottom for footer */}
                 <div className="grid grid-cols-12 gap-1 max-w-3xl w-full">
                     {/* Header Row */}
                     <div className="col-span-1"></div>
@@ -178,9 +178,15 @@ export default function Stats() {
                 </div>
             </div>
             
-            <div className="p-4 bg-gray-50 text-xs text-gray-500 text-center">
-                Click row/column headers to enable/disable numbers. <br/>
-                Green: Fast & Accurate • Yellow: Good but Slow • Red: Needs Practice
+            {/* Footer with Start Button */}
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white to-transparent flex justify-center items-center z-20">
+                <button 
+                    onClick={() => navigate('/quiz')}
+                    className="flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-12 rounded-full shadow-xl transform transition hover:scale-105 text-xl"
+                >
+                    <Play className="w-8 h-8 fill-current" />
+                    START QUIZ
+                </button>
             </div>
         </div>
     );

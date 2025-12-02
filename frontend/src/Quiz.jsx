@@ -100,7 +100,7 @@ export default function Quiz() {
   const [startTime, setStartTime] = useState(() => Date.now());
   const [feedback, setFeedback] = useState(null); // 'correct' | 'wrong' | null
   const [streak, setStreak] = useState(0);
-  const [mode, setMode] = useState("random");
+  const [mode, setMode] = useState("smart");
   const [showMenu, setShowMenu] = useState(false);
   const [disabledFactors, setDisabledFactors] = useState([]);
   const [loadingDisabled, setLoadingDisabled] = useState(true);
@@ -125,30 +125,12 @@ export default function Quiz() {
 
     try {
       let nextQuestion;
-      if (mode === "random") {
-        const validFactors = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(f => !disabledFactors.includes(f));
-        let a, b;
-        if (validFactors.length > 0) {
-            a = validFactors[Math.floor(Math.random() * validFactors.length)];
-            b = validFactors[Math.floor(Math.random() * validFactors.length)];
-        } else {
-            a = Math.floor(Math.random() * 11);
-            b = Math.floor(Math.random() * 11);
-        }
-        nextQuestion = { a, b };
-      } else {
-        const response = await axios.get(
-          `${API_URL}/questions/${mode}/${user.id}`
-        );
-        nextQuestion = response.data.data;
-        if (!nextQuestion) {
-          alert(
-            "Congratulations! You've completed all questions in this mode."
-          );
-          navigate("/mode-select");
-          return;
-        }
-      }
+      // Always fetch from smart endpoint
+      const response = await axios.get(
+        `${API_URL}/questions/smart/${user.id}`
+      );
+      nextQuestion = response.data.data;
+      
       setQuestion(nextQuestion);
       setTimeout(() => {
         setTimerActive(true);
@@ -318,14 +300,12 @@ export default function Quiz() {
     }
     const currentUser = JSON.parse(storedUser);
     setUser(currentUser);
-
-    const searchParams = new URLSearchParams(location.search);
-    const newMode = searchParams.get("mode") || "random";
-    setMode(newMode);
-  }, [location, navigate]);
+    // Mode is always 'smart' now
+  }, [navigate]);
 
   useEffect(() => {
     if (user) {
+         // We still fetch disabled factors to use for local fallback or stats
          axios.get(`${API_URL}/settings/${user.id}/disabled`)
              .then(res => {
                  setDisabledFactors(res.data.data);
@@ -339,10 +319,11 @@ export default function Quiz() {
   }, [user]);
 
   useEffect(() => {
-    if (user && mode && !loadingDisabled) {
+    // Trigger initial question when user is ready
+    if (user && !loadingDisabled) {
       generateQuestion();
     }
-  }, [user, mode, loadingDisabled]);
+  }, [user, loadingDisabled]);
 
   // NEW: Add keyboard event listener
   useEffect(() => {
@@ -376,7 +357,7 @@ export default function Quiz() {
       {/* Header */}
       <div className="flex justify-between items-center p-4">
         <button
-          onClick={() => navigate("/mode-select")}
+          onClick={() => navigate("/stats")}
           className="p-2 rounded-full hover:bg-black/10"
         >
           <ArrowLeft className="w-6 h-6 text-gray-600" />

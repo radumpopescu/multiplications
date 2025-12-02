@@ -248,6 +248,61 @@ app.post('/api/settings/:user_id/toggle-disable', (req, res) => {
 });
 
 // Questions API
+app.get('/api/questions/smart/:user_id', (req, res) => {
+    const { user_id } = req.params;
+    try {
+        const disabled = getDisabledFactors(user_id);
+        const rand = Math.random();
+
+        // 1. Try Problematic (40% chance)
+        if (rand < 0.4) {
+            const problematic = db.prepare(`
+                SELECT DISTINCT factor_a, factor_b
+                FROM results
+                WHERE user_id = ? AND (is_correct = 0 OR time_taken_ms > 5000)
+            `).all(user_id)
+            .filter(q => !disabled.has(q.factor_a) && !disabled.has(q.factor_b));
+
+            if (problematic.length > 0) {
+                const q = problematic[Math.floor(Math.random() * problematic.length)];
+                res.json({ "message": "success", "data": { a: q.factor_a, b: q.factor_b } });
+                return;
+            }
+        }
+
+        // 2. Try Unanswered (30% chance OR fallthrough)
+        // Combined probability threshold: 0.7 if problematic existed, but if it didn't, we are here anyway.
+        // Let's simplify: strict 30% bucket for unanswered?
+        // Or priority list?
+        // "Prioritises but doesn't only show the new ones"
+        // Let's stick to the buckets.
+        
+        if (rand < 0.7) {
+            const unanswered = getUnansweredQuestions(user_id);
+            if (unanswered.length > 0) {
+                const q = unanswered[Math.floor(Math.random() * unanswered.length)];
+                res.json({ "message": "success", "data": q });
+                return;
+            }
+        }
+
+        // 3. Random (Remaining chance OR fallthrough)
+        const validFactors = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].filter(f => !disabled.has(f));
+        
+        if (validFactors.length === 0) {
+            res.status(400).json({"error": "All numbers are disabled"});
+            return;
+        }
+
+        const a = validFactors[Math.floor(Math.random() * validFactors.length)];
+        const b = validFactors[Math.floor(Math.random() * validFactors.length)];
+        res.json({ "message": "success", "data": { a, b } });
+
+    } catch (err) {
+        res.status(400).json({"error": err.message});
+    }
+});
+
 app.get('/api/questions/lowest-scores/:user_id', (req, res) => {
     const { user_id } = req.params;
     try {

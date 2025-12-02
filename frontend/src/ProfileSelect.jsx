@@ -56,7 +56,7 @@ export default function ProfileSelect() {
 
     const selectUser = (user) => {
         localStorage.setItem('currentUser', JSON.stringify(user));
-        navigate('/mode-select');
+        navigate('/stats');
     };
 
     const IconComponent = (iconName) => {
